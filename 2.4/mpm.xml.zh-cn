@@ -1,0 +1,244 @@
+<!-- Simplified Chinese translation: Neumann Wong <lemuel@exusiai.moe> -->
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE manualpage SYSTEM "./style/manualpage.dtd">
+<?xml-stylesheet type="text/xsl" href="./style/manual.en.xsl"?>
+<!-- Simplified Chinese Version -->
+
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<manualpage metafile="mpm.xml.meta">
+
+  <title>多进程处理模块（MPM）Multi-Processing Modules (MPMs)</title>
+
+<summary>
+<p>本文档介绍了多进程处理模块及Apache HTTP Server如何使用该模块。
+This document describes what a Multi-Processing Module is and
+how they are used by the Apache HTTP Server.</p>
+</summary>
+
+<section id="introduction"><title>Introduction</title>
+    <!-- note: "万维网服务器" is a transaltion of "web server". 
+    This translation from the termonline. See https://www.termonline.cn/wordDetail?
+    termName=%E4%B8%87%E7%BB%B4%E7%BD%91%E6%9C%8D%E5%8A%A1%E5%99%A8 to learn more.-->
+    <!-- note: The translation of "webmaster" is "网络管理员", and is also from the
+    termonline. See: https://www.termonline.cn/wordDetail?termName=
+    %E7%BD%91%E7%BB%9C%E7%AE%A1%E7%90%86%E5%91%98 to learn more. -->
+    <p>
+    Apache HTTP Server是以强大、灵活为方向设计的多平台万维网服务器。
+    在不同平台、环境中通常需要不同的功能和特性，或通过不同的方式高效地
+    实现某一功能。得益于Apache httpd模块化的设计思路，它可以适应多种环境。
+    这种设计允许网络管理员通过在编译、运行时选择加载什么模块来决定服务器的功能。
+    The Apache HTTP Server is designed to be a powerful and
+    flexible web server that can work on a very wide variety of
+    platforms in a range of different environments. Different
+    platforms and different environments often require different
+    features, or may have different ways of implementing the same
+    feature most efficiently. Apache httpd has always accommodated a wide
+    variety of environments through its modular design. This design
+    allows the webmaster to choose which features will be included
+    in the server by selecting which modules to load either at
+    compile-time or at run-time.</p>
+
+    <p>Apache HTTP Server的2.0版本将模块化设计思路拓展到了网络服务器的
+    基本功能中。它提供了一系列可以用于绑定端口、接受并调度子进程处理请求的
+    多进程处理模块（MPMs）。
+    Apache HTTP Server 2.0 extends this modular design to the most basic
+    functions of a web server. The server ships with a selection of
+    Multi-Processing Modules (MPMs) which are responsible for
+    binding to network ports on the machine, accepting requests,
+    and dispatching children to handle the requests.</p>
+
+    <p>如此程度的模块化设计，可以为我们的网络服务器带来如下两个重要好处。
+    Extending the modular design to this level of the server
+    allows two important benefits:</p>
+
+    <ul>
+      <li>
+      Apache httpd能更妥善、高效地在多种操作系统中工作。尤其是在Windows版
+      的Apache HTTP Server中，<module>mpm_winnt</module>可以通过原生网络
+      功能取代先前1.3版本的POSIX层。该优势也延伸到了其他已实现对应多进程处理
+      模块的操作系统中。
+      Apache httpd can more cleanly and efficiently support a wide
+      variety of operating systems. In particular, the Windows
+      version of the server is now much more efficient, since
+      <module>mpm_winnt</module> can use native
+      networking features in place of the POSIX layer used in
+      Apache httpd 1.3. This benefit also extends to other operating
+      systems that implement specialized MPMs.</li>
+
+      <li>
+      Apache HTTP server可以更好的为特定站点的需要进行定制。例如，
+      有高可扩缩性需求的站点可以使用<module>worker</module>或<module>event</module>
+      这样线程化的多进程处理模块，而对于有高可靠性或兼容性需求的站点，
+      则可以选择使用<module>prefork</module>。
+      The server can be better customized for the needs of the
+      particular site. For example, sites that need a great deal of
+      scalability can choose to use a threaded MPM like
+      <module>worker</module> or <module>event</module>, while sites requiring
+      stability or compatibility with older software can use a
+      <module>prefork</module>.</li>
+    </ul>
+
+    <p>
+    你可能会觉得多进程处理模块很像其他Apache httpd模块。确实如此，不过不同的是，
+    在运行期间内，服务器只能载入一个多进程处理模块。如需查看全部可用的多进程处理模块，
+    请见<a href="mod/">模块索引</a>。
+    At the user level, MPMs appear much like other Apache httpd
+    modules. The main difference is that one and only one MPM must
+    be loaded into the server at any time. The list of available
+    MPMs appears on the <a href="mod/">module index page</a>.</p>
+
+</section>
+
+<section id="defaults"><title>默认的多进程处理模块</title>
+
+<p>
+下方表单列出了不同系统默认使用的多进程处理模块，该多进程处理模块将在你未在编译时
+指定启用哪个多进程处理模块的情况下默认启用。
+The following table lists the default MPMs for various operating
+systems.  This will be the MPM selected if you do not make another
+choice at compile-time.</p>
+
+<table border="1" style="zebra">
+<columnspec><column width=".2"/><column width=".2"/></columnspec>
+<tr><td>Netware</td><td><module>mpm_netware</module></td></tr>
+<tr><td>OS/2</td><td><module>mpmt_os2</module></td></tr>
+<tr><td>Unix</td><td><module>prefork</module>, <module>worker</module>, or
+    <module>event</module>, depending on platform capabilities</td></tr>
+<tr><td>Windows</td><td><module>mpm_winnt</module></td></tr>
+</table>
+
+<note><p>
+此处的“Unix”指代包含Linux、BSD、Solaris、Mac OS X等在内的类Unix操作系统。
+Here, 'Unix' is used to mean Unix-like operating systems, such as
+Linux, BSD, Solaris, Mac OS X, etc.</p></note>
+
+<p>
+对于Unix而言，多进程处理模块的选择取决于两个问题：
+In the case of Unix, the decision as to which MPM is installed is
+based on two questions:</p>
+<p>
+1.系统是否支持线程？
+1. Does the system support threads?</p>
+<p>
+2.系统是否支持线程安全的轮询，特别是kqueue和epoll功能？
+2. Does the system support thread-safe polling (Specifically, the
+kqueue and epoll functions)?</p>
+
+<p>
+如果这两个问题的答案都是“是”，那么默认的多进程处理模块就是<module>event</module>。
+If the answer to both questions is 'yes', the default MPM is
+<module>event</module>.</p>
+
+<p>
+如果问题1的答案是“是”，问题二的答案是“否”，那么默认的多进程处理模块是<module>worker</module>。
+If The answer to #1 is 'yes', but the answer to #2 is 'no', the
+default will be <module>worker</module>.</p>
+
+<p>
+如果两个问题的答案都是“否”，那么默认的多进程处理模块是<module>prework</module>。
+If the answer to both questions is 'no', then the default MPM will be
+<module>prefork</module>.</p>
+
+<p>
+一般来说，现代操作系统都支持这两个功能，在现代操作系统中安装的Apache HTTP Server
+的默认多进程处理模块通常是<module>event</module>。
+In practical terms, this means that the default will almost always be
+<module>event</module>, as all modern operating systems support these
+two features.</p>
+
+</section>
+
+<section id="static"><title>静态构建多进程处理模块Building an MPM as a static module</title>
+
+    <p>
+    多进程处理模块可以在各平台上作为静态模块构建，并链接到服务器中。
+    这样构建的服务器，如果需要修改多进程处理模块，就还需要重新构建一遍服务器。
+    MPMs can be built as static modules on all platforms.  A single MPM
+    is chosen at build time and linked into the server.  The server must
+    be rebuilt in order to change the MPM.</p>
+
+    <p>
+    你可以使用<program>configur</program>脚本的<code>--with-mpm=<em>NAME</em></code>
+    选项，指定你想使用的多进程处理模块。<em>NAME</em>是你想要的多进程处理模块的名称。
+    To override the default MPM choice, use the
+    <code>--with-mpm=<em>NAME</em></code> option of the
+    <program>configure</program> script. <em>NAME</em> is the name of the
+    desired MPM.</p>
+
+    <p>
+    服务器编译完成后，可以使用<code>./httpd -l</code>来确定所选的多进程处理模块。
+    该命令会列出包括多进程处理模块在内的，编译入服务器内的全部模块列表。
+    Once the server has been compiled, it is possible to determine which MPM
+    was chosen by using <code>./httpd -l</code>. This command will list every
+    module that is compiled into the server, including the MPM.</p>
+
+</section>
+
+<section id="dynamic"><title>将多进程处理模块构建为DSO模块 Building an MPM as a DSO module</title>
+
+    <p>
+    在Unix等平台中，多进程处理模块可以构建为DSO模块，并可以以和其他DSO模块相同
+    的方式动态加载进服务器中。同时，多进程处理模块构建为DSO模块还可以让你通过
+    更新<directive module="mod_so">LoadModule</directive>来修改使用的多进程
+    处理模块，而无需重新构建服务器。
+    On Unix and similar platforms, MPMs can be built as DSO modules and
+    dynamically loaded into the server in the same manner as other DSO
+    modules.  Building MPMs as DSO modules allows the MPM to be changed by
+    updating the <directive module="mod_so">LoadModule</directive> directive
+    for the MPM instead of by rebuilding the server.</p>
+
+    <highlight language="config">
+    LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
+    </highlight>
+
+    <p>
+    如<directive module="mod_so">LoadModule</directive>中加载了
+    多个多进程处理模块，服务器将不能启动，并返回如下错误信息。
+    Attempting to <directive module="mod_so">LoadModule</directive>
+    more than one MPM will result in a startup failure with the
+    following error.</p>
+
+    <example>AH00534: httpd: Configuration error: More than one MPM
+    loaded.</example>
+
+    <p>
+    此功能可通过<program>configure</program>脚本的<code>--enable-mpms-shared</code>
+    选项启用。你可以通过传入参数<code><em>all</em></code>来安装适用于该平台的全部
+    多进程处理模块。或者，你可以传入一个带有你所想安装多进程处理模块的列表来设置所要安装的
+    多进程处理模块。
+    This feature is enabled using the
+    <code>--enable-mpms-shared</code> option of the <program>configure</program>
+    script.
+    With argument <code><em>all</em></code>, all possible MPMs for the platform
+    will be installed.  Alternately, a list of MPMs can be specified as the
+    argument.</p>
+
+    <p>
+    无论是自动选择，还是通过<program>configure</program>脚本的<code>--with-mpm</code>
+    选项安装的默认多进程处理模块，都会加载到生成的服务器配置文件中，你可以通过编辑
+    <directive module="mod_so">LoadModule</directive>来选择不同的多进程处理模块。
+    The default MPM, either selected automatically or specified with the
+    <code>--with-mpm</code> option of the <program>configure</program>
+    script, will be loaded in the generated server configuration file.  Edit the
+    <directive module="mod_so">LoadModule</directive> directive to select a
+    different MPM.</p>
+
+</section>
+
+</manualpage>

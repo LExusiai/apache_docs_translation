@@ -1,0 +1,358 @@
+<!-- Simplified Chinese translation: Neumann Wong <lemuel@exusiai.moe> -->
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE manualpage SYSTEM "./style/manualpage.dtd">
+<?xml-stylesheet type="text/xsl" href="./style/manual.en.xsl"?>
+<!-- Simplified Chinese Version -->
+
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<manualpage metafile="install.xml.meta">
+
+  <title>编译与安装</title>
+
+<summary>
+
+    <p>本文档仅涵盖在Unix和类Unix系统上编译、安装的Apache HTTP Server。 
+    若你是在Windows中编译和安装的Apache HTTP Server，则请见<a
+    href="platform/windows.html">在Windows中使用Apache HTTP Server</a>和<a
+    href="platform/win_compiling.html">为Windows编译Apache HTTP Server</a>。
+    对于其他平台，请见 <a href="platform/">各平台</a>文档。</p>
+
+    <p>Apache httpd使用<code>libtool</code>和<code>autoconf</code>
+    提供一个和多数开源项目相似的的构建环境。</p>
+
+    <p>如果你想要从一个小版本升级到下一个小版本，例如从2.4.8到2.4.9，请直接查看<a
+    href="#upgrading">升级</a>部分内容。</p>
+
+</summary>
+
+<seealso><a href="programs/configure.html">Configure the source tree</a></seealso>
+<seealso><a href="invoking.html">Starting Apache httpd</a></seealso>
+<seealso><a href="stopping.html">Stopping and Restarting</a></seealso>
+
+<section id="overview"><title>快速上手</title>
+
+    <dl>
+    <dt>Fedora/CentOS/Red Hat Enterprise Linux</dt>
+    <dd>
+    <highlight>
+sudo yum install httpd
+sudo systemctl enable httpd
+sudo systemctl start httpd
+    </highlight>
+
+    <note type="warning">请不要再这些发行版的新版本中使用<code>yum</code>，
+    请使用<code>dnf</code>。阅读<a href="https://fedoraproject.org/wiki/Apache_HTTP_Server">
+    Fedora的文档</a>，以获取针对特定平台的说明。</note>
+    </dd>
+
+    <dt>Ubuntu/Debian</dt>
+    <dd>
+<highlight>
+sudo apt install apache2
+sudo service apache2 start
+</highlight>
+
+    <note type="warning">请阅读<a href="https://help.ubuntu.com/lts/serverguide/httpd.html">Ubuntu的文档</a>以获得针对特定平台的说明。</note>
+
+    </dd>
+
+    <dt>从源码安装</dt>
+    <dd>
+    <table>
+      <columnspec><column width=".13"/><column width=".80"/></columnspec>
+      <tr>
+        <td><a href="#download">下载</a></td>
+
+        <td>从 <a href="http://httpd.apache.org/download.cgi#apache24">http://httpd.apache.org/download.cgi</a> 下载最新版本。
+        </td>
+      </tr>
+
+      <tr>
+        <td><a href="#extract">解压</a></td>
+
+        <td><code>$ gzip -d httpd-<em>NN</em>.tar.gz<br />
+         $ tar xvf httpd-<em>NN</em>.tar<br />
+         $ cd httpd-<em>NN</em></code></td>
+      </tr>
+
+      <tr>
+        <td><a href="#configure">配置</a></td>
+
+        <td><code>$ ./configure --prefix=<em>PREFIX</em></code>
+        </td>
+      </tr>
+
+      <tr>
+        <td><a href="#compile">编译</a></td>
+
+        <td><code>$ make</code> </td>
+      </tr>
+
+      <tr>
+        <td><a href="#install">安装</a></td>
+
+        <td><code>$ make install</code> </td>
+      </tr>
+
+      <tr>
+        <td><a href="#customize">自定义</a></td>
+
+        <td><code>$ vi <em>PREFIX</em>/conf/httpd.conf</code> </td>
+      </tr>
+
+      <tr>
+        <td><a href="#test">测试</a></td>
+
+        <td><code>$ <em>PREFIX</em>/bin/apachectl -k start</code>
+        </td>
+      </tr>
+    </table>
+
+        <p>上文中的<em>NN</em>需替换为当前版本号, 且<em>PREFIX</em>也必须替换为Apache HTTP Server要安装在文件系统中的位置。
+        若你不指定<em>PREFIX</em>，那么<em>PREFIX</em>默认将为<code>/usr/local/apache2</code>。</p>
+
+        <p>后续章节将自编译、安装Apache httpd的要求开始，更详细的说明编译、安装各部分的过程。</p>
+    </dd>
+    </dl>
+
+    <note type="warning">你喜欢用的平台没出现？ <a href="http://httpd.apache.org/docs-project/">和我们一起改进此文档吧。</a></note>
+
+</section>
+
+<section id="requirements"><title>要求</title>
+
+    <p>下为构建Apache httpd的要求：</p>
+
+    <dl>
+      <dt>APR和APR-Util</dt>
+      <dd>请先确保你的系统中已安装APR和APR-Util。
+      如果你的系统中还没有安装APR和APR-Util，或者你不想使用系统提供的版本，那么请从<a href="http://apr.apache.org/">Apache APR</a>
+      获取APR和APR-Util，然后将它们解压到<code>/httpd_source_tree_root/srclib/apr</code>和<code>/httpd_source_tree_root/srclib/apr-util</code>
+      （请确保目录名中不含版本号，例如APR必须解压到/httpd_source_tree_root/srclib/apr），并使用<code>./configure</code>的
+      <code>--with-included-apr</code>选项。在部分平台中，你可能还需要安装相应的 <code>-dev</code> 软件包，才能让httpd使用你所安装的APR和APR-Util副本进行构建。</dd>
+
+      <dt>Perl-Compatible Regular Expressions Library (PCRE)</dt>
+      <dd>此库为构建过程所必须，但不与httpd捆绑，请从<a href="http://www.pcre.org/">http://www.pcre.org</a>下载源代码，
+      或通过Port、软件包安装。若构建系统无法获取到PCRE构建时所产生的pcre-config脚本，请使用<code>--with-pcre</code>手动指定其路径。
+      部分平台中，你可能还需要安装相应的<code>-dev</code>包，才能让httpd使用你所安装的PCRE副本进行构建。</dd>
+
+      <dt>磁盘空间</dt>
+      <dd>请确保你至少有50MB可用的临时磁盘空间，Apache httpd安装后大约会占用10MB的磁盘空间。
+      此外，实际的磁盘空间需求随你的配置不同、第三方模块不同、网站大小不同而会有很大差异。</dd>
+
+      <dt>ANSI-C编译器和构建系统</dt>
+      <dd>请确保你已安装ANSI-C编辑器，推荐使用来自<a href="http://www.gnu.org/">自由软件基金会（[英]Free Software Foundation，FSF）</a>的<ahref="http://gcc.gnu.org/">GNU Ccompiler (GCC)</a>。
+      如果你不使用GCC，则请至少确保你所用的编译器符合ANSI的标准。此外，你的<code>PATH</code>中必须包含<code>make</code>等基本构建工具。</dd>
+
+      <dt>保持时间准确</dt>
+      <dd>HTTP协议的部分内容以时间表示，因此请在系统中设置好某种时间同步机制。
+      你通常使用基于网络时间协议（[英]Network Time Protocol，NTP）的<code>ntpdate</code>、<code>xntpd</code>等程序实现此目标。
+      有关NTP软件、公共时间服务器等的更多信息，请参阅<a href="http://www.ntp.org">NTP homepage</a>。</dd>
+
+      <dt><a href="http://www.perl.org/">Perl 5</a>
+      [可选]</dt>
+      <dd>For some of the support scripts like <program>
+      apxs</program> or <program>dbmmanage</program> (which are
+      written in Perl) the Perl 5 interpreter is required (versions
+      5.003 or newer are sufficient).  If no Perl 5 interpreter is found by the
+      <program>configure</program> script, you will not be able to use
+      the affected support scripts. Of course, you will still be able to
+      build and use Apache httpd.</dd>
+    </dl>
+</section>
+
+<section id="download"><title>下载</title>
+
+    <p>
+    你可以从<a href="http://httpd.apache.org/download.cgi">Apache HTTP Server download site</a>所列的镜像站中下载Apache HTTP Server。
+    在类Unix系统上使用Apache的用户最好自行下载、编译源代码版本。下述构建过程非常简单，且你可以在构建的过程中根据需要自定义服务器。
+    此外，二进制版本通常不能和最新的源代码版本保持同步，若你下载了二进制文件版本，则请照所下载文件内<code>INSTALL.bindist</code>文件中的指示操作。
+    </p>
+
+    <p>
+    下载后，请务必验证你下载的版本是否完整且未经修改，你可以PGP签名来验证下载的tarball压缩包。
+    详细的操作方法，请见<a href="http://httpd.apache.org/download.cgi#verify"> 下载页 </a>。
+    另有一页面介绍了<a href="http://httpd.apache.org/dev/verification.html"> 如何使用PGP</a>。
+    </p>
+
+</section>
+
+<section id="extract"><title>解压</title>
+
+    <p>
+    从Apache HTTP Server的tar包中获取源代码非常简单，你只需要先解压缩，然后再解包即可。
+    方法如下所示：
+    </p>
+
+<example>
+$ gzip -d httpd-<em>NN</em>.tar.gz<br />
+$ tar xvf httpd-<em>NN</em>.tar
+</example>
+
+    <p>这将在现在的目录下创建一个新目录，然后源代码会被解压缩至该目录。
+    请在编译前<code>cd</code>到该目录。</p>
+</section>
+
+<section id="configure"><title>配置source tree</title>
+
+    <p>根据你所使用的平台和你个人需求，你需要使用分发包根目录内的<program>configure</program>脚本配置Apache的source tree。
+    对于下载了尚未发布版本Apache source tree的用户，还需要安装<code>autoconf</code>和<code>libtool</code>，并需要在执行后续步骤前运行<code>buildconf</code>。
+    （使用官方发布版本的用户无需进行此操作）</p>
+
+    <p>对于期望使用默认配置的用户，输入<code>./configure</code>即可。
+    如果希望修改配置选项，<program>configure</program>也支持多种变量和命令行选项。</p>
+
+    <p>其中，用于指定Apache在何处安装的<code>--prefix</code>选项最为重要，
+    因为Apache必须针对此位置进行配置方能正常工作。
+    你还可以使用额外的<a href="programs/configure.html#installationdirectories">configure
+    选项</a>来更精确的控制。</p>
+
+    <p>此时，你还可以通过启用或禁用<a href="mod/">模块</a>来设置Apache的
+    <a href="programs/configure.html#optionalfeatures">功能</a>。
+    Apache默认包含大量模块，将以<a href="dso.html">共享对象(DSOs)</a>的形式编译，并可运行时中加载、卸载。
+    你也可以通过使用<code>--enable-<var>module</var>=static</code>指定静态编译这些模块。</p>
+
+    <p>你可以使用<code>--enable-<var>module</var></code>（module的值为模块名去掉<code>mod_</code>，并将剩余部分的下划线改为连字符）来启用其他模块，
+    并可以使用<code>--disable-<var>module</var></code>来禁用某一模块。
+    请务必谨慎使用该功能。<program>configure</program>并不会提示你你所指定的模块是否存在，如不存在，它只会直接忽略，而不会提供任何说明。</p>
+
+    <p>此外，在一些情况下，你可能还需要通过环境变量、命令行选项等方式，
+    额外向<program>configure</program>脚本提供编译器、库文件、头文件等的位置。
+    更多相关信息请参阅<program>configure</program>的手册页面，
+    你还可以通过调用<program>configure</program>脚本并同时附加<code>--help</code>选项来获取相关信息。</p>
+
+    <p> 下面提供一个示例，以便你快速了解可用的配置项。
+    下方示例将会使用指定的编译器和编译标志，外加两个模块<module>mod_ldap</module>和<module>mod_lua</module>，
+    编译Apache到目录<code>/sw/pkg/apache</code>。</p>
+
+<example>
+      $ CC="pgcc" CFLAGS="-O2" \<br />
+       ./configure --prefix=/sw/pkg/apache \<br />
+       --enable-ldap=shared \<br />
+       --enable-lua=shared
+</example>
+
+    <p>当你运行<program>configure</program>时，<program>configure</program>将花费一段时间来检测系统各项功能的可用性，
+    并生成Makefile，这些Makefile将在后续过程中用于编译Apache。</p>
+
+    <p>请参阅<program>configure</program>的手册页，以了解<program>configure</program>的全部选项。</p>
+</section>
+
+<section id="compile"><title>构建</title>
+
+    <p>现在，你只需运行下方命令，即可构建Apache各部分内容。</p>
+
+<example>$ make</example>
+
+    <p>编译可能要花些时间，请耐心等待。具体耗时因设备性能及启用模块数量不同而有较大差异。</p>
+</section>
+
+<section id="install"><title>安装</title>
+
+    <p>现在，你可以通过运行下方命令，把Apache安装到先前配置好的<em>PREFIX</em>目录（见上方的<code>--prefix</code>）下。</p>
+
+<example>$ make install</example>
+
+    <p>由于<em>PREFIX</em>所指定的目录通常是一个限制写权限的目录，因而执行该操作通常需要root权限。</p>
+
+    <p>对于正在升级的用户而言，此过程不会覆盖你的设置和文件。</p>
+</section>
+
+<section id="customize"><title>自定义</title>
+
+    <p>然后，你可以通过编辑<code><em>PREFIX</em>/conf/</code>目录下的<a href="configuring.html">配置文件</a>，
+    来自定义你的Apache HTTP Server。/p>
+
+<example>$ vi <em>PREFIX</em>/conf/httpd.conf</example>
+
+    <p>请查阅<code><em>PREFIX</em>/docs/manual/</code>目录下的手册，
+    或访问<a href="http://httpd.apache.org/docs/&httpd.docs;/">http://httpd.apache.org/docs/&httpd.docs;/</a>
+    以获取最新版本手册及可用配置指令的完整参考文件。</p>
+</section>
+
+<section id="test"><title>测试</title>
+
+    <p>现在，你可以通过运行下方命令来<a href="invoking.html">启动</a>Apache HTTP server。</p>
+
+<example>$ <em>PREFIX</em>/bin/apachectl -k start</example>
+
+    <p>然后，你应该可以通过访问<code>http://localhost/</code>看到你的第一个页面。
+    你所看到的网页位于<directive module="core">DocumentRoot</directive>，通常在<code><em>PREFIX</em>/htdocs/</code>。
+    再然后，你可以通过运行下方指令以<a href="stopping.html">停止</a>Apache HTTP server的运行。</p>
+
+<example>$ <em>PREFIX</em>/bin/apachectl -k stop</example>
+</section>
+<section id="upgrading"><title>升级</title>
+
+    <p>首先，请阅读发行公告和新版本源代码包里的<code>CHANGES</code>文件，
+    以确认新版本中的变动会不会影响您的站点。在你从不同主版本间升级时，
+    例如从2.0版本到2.2版本，或从2.2版本到2.4版本，编译时、运行时的配置可能
+    存在重大变动，并需你手动调整相关内容。此外，升级时也必须同时升级所有模块，
+    以适应模块API的变动。</p>
+
+    <p>升级Apache到它之后的小版本，例如从2.2.55到2.2.57，就比较简单了。
+    <code>make install</code>不会覆盖你任何的文件、日志文件、配置文件。
+    此外，开发者会尽量避免在小版本间引入不兼容的修改，包括<program>
+    configure</program>选项、运行时配置、模块API等。
+    大多数情况下，你可以按往常的方法使用<program>configure</program>，
+    并可以继续使用相同的配置文件，且各模块也应正常工作。</p>
+
+    <p>在升级小版本时，请先在你已安装好的Apache目录下，或者旧版本source tree的
+    根目录下找到<code>build</code>文件夹，然后找到<code>build</code>文件夹内
+    的<code>config.nice</code>文件。<code>config.nice</code>内含你先前用于配置source tree的
+    <program>configure</program>命令。
+    请将<code>config.nice</code>文件复制到新版本的source tree中，并根据需要进行编辑
+    <code>config.nice</code>文件，然后运行下方命令以完成更新操作。</p>
+
+    <example>
+    $ ./config.nice<br />
+    $ make<br />
+    $ make install<br />
+    $ <em>PREFIX</em>/bin/apachectl -k graceful-stop<br />
+    $ <em>PREFIX</em>/bin/apachectl -k start<br />
+    </example>
+
+    <note type="warning">
+    你始终应该在将新版本投入生产环境前自己测试一遍。例如，你可以使用不同的
+    <code>--prefix</code>、不同的端口（通过调整<directive module="mpm_common">Listen</directive>指令）
+    将新版本与旧版本并行运行，以便在投入生产环境前确认是否存在任何不兼容的地方。.</note>
+
+    <p>你可以给<code>config.nice</code>传入附加参数，这些参数将附加到你原始<program>configure</program>的选项中。</p>
+
+    <example>
+    $ ./config.nice --prefix=/home/test/apache --with-port=90
+    </example>
+</section>
+<section id="thirdp"><title>第三方软件包</title>
+
+    <p>许多第三方提供了用于在特定平台中安装的Apache HTTP server软件发行包，
+    例如各种Linux发行版、各种在Windows平台上的第三方Apache HTTP server软件包、
+    Mac OS X、Solaris以及其他平台。</p>
+
+    <p>Apache HTTP server的许可证允许、鼓励这种类型的再分发。
+    不过，这种类型的再分发也确实会导致你系统中所安装的Apache HTTP server的
+    配置文件布局、默认选项与本文档中的说明有所不同。并且这种情况在短期内不太
+    可能发生什么改变。</p>
+
+    <p>HTTP Server wiki中维护了一个应该能反应第三方发行版现时情况的<a
+    href="http://wiki.apache.org/httpd/DistrosDefaultLayout">说明</a>。
+    但无论如何，你还是需要熟悉你所使用平台软件包的管理、安装过程。</p>
+
+</section>
+</manualpage>
