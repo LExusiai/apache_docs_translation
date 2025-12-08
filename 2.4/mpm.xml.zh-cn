@@ -151,7 +151,7 @@ If The answer to #1 is 'yes', but the answer to #2 is 'no', the
 default will be <module>worker</module>.</p>
 
 <p>
-如果两个问题的答案都是“否”，那么默认的多进程处理模块是<module>prework</module>。
+如果两个问题的答案都是“否”，那么默认的多进程处理模块是<module>prefork</module>。
 If the answer to both questions is 'no', then the default MPM will be
 <module>prefork</module>.</p>
 
@@ -174,7 +174,7 @@ two features.</p>
     be rebuilt in order to change the MPM.</p>
 
     <p>
-    你可以使用<program>configur</program>脚本的<code>--with-mpm=<em>NAME</em></code>
+    你可以使用<program>configure</program>脚本的<code>--with-mpm=<em>NAME</em></code>
     选项，指定你想使用的多进程处理模块。<em>NAME</em>是你想要的多进程处理模块的名称。
     To override the default MPM choice, use the
     <code>--with-mpm=<em>NAME</em></code> option of the
