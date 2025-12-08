@@ -56,7 +56,7 @@ sudo systemctl enable httpd
 sudo systemctl start httpd
     </highlight>
 
-    <note type="warning">请不要再这些发行版的新版本中使用<code>yum</code>，
+    <note type="warning">请不要在这些发行版的新版本中使用<code>yum</code>，
     请使用<code>dnf</code>。阅读<a href="https://fedoraproject.org/wiki/Apache_HTTP_Server">
     Fedora的文档</a>，以获取针对特定平台的说明。</note>
     </dd>
@@ -167,13 +167,8 @@ sudo service apache2 start
 
       <dt><a href="http://www.perl.org/">Perl 5</a>
       [可选]</dt>
-      <dd>For some of the support scripts like <program>
-      apxs</program> or <program>dbmmanage</program> (which are
-      written in Perl) the Perl 5 interpreter is required (versions
-      5.003 or newer are sufficient).  If no Perl 5 interpreter is found by the
-      <program>configure</program> script, you will not be able to use
-      the affected support scripts. Of course, you will still be able to
-      build and use Apache httpd.</dd>
+      <dd>对于一些类似于<program>apxs</program>、<program>dbmmanage</program>这样用Perl编写的脚本，你需要至少5.003版本的Perl 5解释器。
+      倘若<program>configure</program>脚本找不到Perl 5解释器，那你就不能使用相关脚本。Perl 5解释器的存在与否不影响Apache httpd的构建与使用。</dd>
     </dl>
 </section>
 
